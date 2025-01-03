@@ -1,0 +1,46 @@
+name: Update WP Packages
+description: 'Update WP Packages'
+inputs: 
+  WP_VERSION: 
+    description: 'WP Version to update packages for'
+    required: true
+  GITHUB_TOKEN:
+    description: 'GitHub Token'
+    required: true
+runs:
+  using: composite
+  steps:
+
+    # Setup the action
+    - name: Clone Repo
+      uses: actions/checkout@v4
+      with: 
+        fetch-depth: 1
+        persist-credentials: false
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+    - name: Install Deps
+      shell: bash
+      run: npm ci
+
+    # Run the update script
+    - name: Update WP Packages
+      shell: bash
+      run: npm run packages-update
+    
+    # Create a PR
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v7
+      with: 
+        title: "[DEPS] Update WP Packages for WP ${{ inputs.WP_VERSION }}"
+        body: "This PR updates the WP packages to the latest versions for WP ${{ inputs.WP_VERSION }}."
+        branch: "deps/wp-packages/wp-${{ inputs.WP_VERSION }}"
+        author: "BoxUK WordPress Robot<wordpress@boxuk.com>"
+        labels: "dependencies"
+        token: ${{ inputs.GITHUB_TOKEN }}
+        committer: BoxUK WP Robot<wordpress@boxuk.com>
+        commit-message: Update WP Packages to ${{ inputs.WP_VERSION }}
+        delete-branch: true
